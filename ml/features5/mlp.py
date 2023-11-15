@@ -10,13 +10,21 @@ import numpy as np
 import joblib
 from ML.features5.data_prepare import data_prepare
 import warnings
+from sklearn.preprocessing import MinMaxScaler
 
-
-def training_model_mlp_solver(path="./ML/features5/", filename="ML_all", target="wt", n_job=4, call=100):
-    np.int = int
-    warnings.filterwarnings("ignore", category=FutureWarning)
-    
+warnings.filterwarnings("ignore", category=FutureWarning)
+np.int = int
+def data_pare(path="./ML/features5/", filename="ML_all", target="wt"):
     Xtrain, Xtest, Ytrain, Ytest = data_prepare(path=path, filename=filename, target=target)
+    scaler = MinMaxScaler()
+    Xtrain = scaler.fit_transform(Xtrain)
+    joblib.dump(scaler, "scaler.gz")
+    scaler = joblib.load("scaler.gz")
+    Xtest = scaler.transform(Xtest)
+
+    return Xtrain, Xtest, Ytrain, Ytest
+
+def training_model_mlp_solver(Xtrain, Xtest, Ytrain, Ytest, path="./ML/features5/", filename="ML_all", target="wt", n_job=4, call=100):
     
     reg = MLPRegressor(random_state=44) 
     
@@ -50,12 +58,7 @@ def training_model_mlp_solver(path="./ML/features5/", filename="ML_all", target=
         np.sqrt(mean_squared_error(Ytrain, reg_opt.predict(Xtrain), squared=False)),
         np.sqrt(mean_squared_error(Ytest, reg_opt.predict(Xtest), squared=False))))
 
-def training_model_mlp_sgd(path="./ML/features5/", filename="ML_all", target="wt", n_job=4, call=100):
-
-    np.int = int
-    warnings.filterwarnings("ignore", category=FutureWarning)
-    
-    Xtrain, Xtest, Ytrain, Ytest = data_prepare(path=path, filename=filename, target=target)
+def training_model_mlp_sgd(Xtrain, Xtest, Ytrain, Ytest,path="./ML/features5/", filename="ML_all", target="wt", n_job=4, call=100):
     
     reg = MLPRegressor(random_state=66) 
 
@@ -144,31 +147,26 @@ def training_model_mlp_sgd(path="./ML/features5/", filename="ML_all", target="wt
                                             np.sqrt(mean_squared_error(Ytest, reg_opt.predict(Xtest), squared=False))))
 
     
-    result = pd.ExcelWriter(path + filename + "_" + target + "_mlp.xlsx")
+    # result = pd.ExcelWriter(path + filename + "_" + target + "_mlp.xlsx")
     
-    df_result_train = pd.DataFrame({"T": Xtrain["T"],
-                                    "site": Xtrain["site"],
-                                    "ratio": Xtrain["ratio"],
-                                    "Ytrain": Ytrain.values.reshape(-1),
-                                    'Ytrain_pre': reg_opt.predict(Xtrain).ravel()})
-    df_result_train.to_excel(result, index=False, sheet_name="data_train")
-    df_result_test = pd.DataFrame({"T": Xtest["T"],
-                                   "site": Xtest["site"],
-                                   "ratio": Xtest["ratio"],
-                                   "Ytest": Ytest.values.reshape(-1),
-                                   'Ytest_pre': reg_opt.predict(Xtest).ravel()})
-    df_result_test.to_excel(result, index=False, sheet_name="data_test")
+    # df_result_train = pd.DataFrame({"T": Xtrain["T"],
+    #                                 "site": Xtrain["site"],
+    #                                 "ratio": Xtrain["ratio"],
+    #                                 "Ytrain": Ytrain.values.reshape(-1),
+    #                                 'Ytrain_pre': reg_opt.predict(Xtrain).ravel()})
+    # df_result_train.to_excel(result, index=False, sheet_name="data_train")
+    # df_result_test = pd.DataFrame({"T": Xtest["T"],
+    #                                "site": Xtest["site"],
+    #                                "ratio": Xtest["ratio"],
+    #                                "Ytest": Ytest.values.reshape(-1),
+    #                                'Ytest_pre': reg_opt.predict(Xtest).ravel()})
+    # df_result_test.to_excel(result, index=False, sheet_name="data_test")
     
-    result.close()
-    save_model = joblib.dump(reg_opt, path + filename + "_" + target + "_mlp.pkl")
+    # result.close()
+    # save_model = joblib.dump(reg_opt, path + filename + "_" + target + "_mlp.pkl")
 
 
-def training_model_mlp_adam(path="./ML/features5/", filename="ML_all", target="wt", n_job=4, call=100):
-
-    np.int = int
-    warnings.filterwarnings("ignore", category=FutureWarning)
-    
-    Xtrain, Xtest, Ytrain, Ytest = data_prepare(path=path, filename=filename, target=target)
+def training_model_mlp_adam(Xtrain, Xtest, Ytrain, Ytest,path="./ML/features5/", filename="ML_all", target="wt", n_job=4, call=100):
     
     reg = MLPRegressor(random_state=88) 
 
@@ -206,30 +204,26 @@ def training_model_mlp_adam(path="./ML/features5/", filename="ML_all", target="w
                                             np.sqrt(mean_squared_error(Ytrain, reg_opt.predict(Xtrain), squared=False)),
                                             np.sqrt(mean_squared_error(Ytest, reg_opt.predict(Xtest), squared=False))))
        
-    result = pd.ExcelWriter(path + filename + "_" + target + "_adam_mlp.xlsx")
+    # result = pd.ExcelWriter(path + filename + "_" + target + "_adam_mlp.xlsx")
     
-    df_result_train = pd.DataFrame({"T": Xtrain["T"],
-                                    "site": Xtrain["site"],
-                                    "ratio": Xtrain["ratio"],
-                                    "Ytrain": Ytrain.values.reshape(-1),
-                                    'Ytrain_pre': reg_opt.predict(Xtrain).ravel()})
-    df_result_train.to_excel(result, index=False, sheet_name="data_train")
-    df_result_test = pd.DataFrame({"T": Xtest["T"],
-                                   "site": Xtest["site"],
-                                   "ratio": Xtest["ratio"],
-                                   "Ytest": Ytest.values.reshape(-1),
-                                   'Ytest_pre': reg_opt.predict(Xtest).ravel()})
-    df_result_test.to_excel(result, index=False, sheet_name="data_test")
+    # df_result_train = pd.DataFrame({"T": Xtrain["T"],
+    #                                 "site": Xtrain["site"],
+    #                                 "ratio": Xtrain["ratio"],
+    #                                 "Ytrain": Ytrain.values.reshape(-1),
+    #                                 'Ytrain_pre': reg_opt.predict(Xtrain).ravel()})
+    # df_result_train.to_excel(result, index=False, sheet_name="data_train")
+    # df_result_test = pd.DataFrame({"T": Xtest["T"],
+    #                                "site": Xtest["site"],
+    #                                "ratio": Xtest["ratio"],
+    #                                "Ytest": Ytest.values.reshape(-1),
+    #                                'Ytest_pre': reg_opt.predict(Xtest).ravel()})
+    # df_result_test.to_excel(result, index=False, sheet_name="data_test")
     
-    result.close()
-    save_model = joblib.dump(reg_opt, path + filename + "_" + target + "_adam_mlp.pkl")
+    # result.close()
+    # save_model = joblib.dump(reg_opt, path + filename + "_" + target + "_adam_mlp.pkl")
 
 
-def training_model_mlp_lbfgs(path="./ML/features5/", filename="ML_all", target="wt", n_job=4, call=100):
-    np.int = int
-    warnings.filterwarnings("ignore", category=FutureWarning)
-    
-    Xtrain, Xtest, Ytrain, Ytest = data_prepare(path=path, filename=filename, target=target)
+def training_model_mlp_lbfgs(Xtrain, Xtest, Ytrain, Ytest,path="./ML/features5/", filename="ML_all", target="wt", n_job=4, call=100):
     
     reg = MLPRegressor(random_state=44) 
     
@@ -261,20 +255,20 @@ def training_model_mlp_lbfgs(path="./ML/features5/", filename="ML_all", target="
         np.sqrt(mean_squared_error(Ytrain, reg_opt.predict(Xtrain), squared=False)),
         np.sqrt(mean_squared_error(Ytest, reg_opt.predict(Xtest), squared=False))))
     
-    result = pd.ExcelWriter(path + filename + "_" + target + "_lbfgs_mlp.xlsx")
+    # result = pd.ExcelWriter(path + filename + "_" + target + "_lbfgs_mlp.xlsx")
     
-    df_result_train = pd.DataFrame({"T": Xtrain["T"],
-                                    "site": Xtrain["site"],
-                                    "ratio": Xtrain["ratio"],
-                                    "Ytrain": Ytrain.values.reshape(-1),
-                                    'Ytrain_pre': reg_opt.predict(Xtrain).ravel()})
-    df_result_train.to_excel(result, index=False, sheet_name="data_train")
-    df_result_test = pd.DataFrame({"T": Xtest["T"],
-                                   "site": Xtest["site"],
-                                   "ratio": Xtest["ratio"],
-                                   "Ytest": Ytest.values.reshape(-1),
-                                   'Ytest_pre': reg_opt.predict(Xtest).ravel()})
-    df_result_test.to_excel(result, index=False, sheet_name="data_test")
+    # df_result_train = pd.DataFrame({"T": Xtrain["T"],
+    #                                 "site": Xtrain["site"],
+    #                                 "ratio": Xtrain["ratio"],
+    #                                 "Ytrain": Ytrain.values.reshape(-1),
+    #                                 'Ytrain_pre': reg_opt.predict(Xtrain).ravel()})
+    # df_result_train.to_excel(result, index=False, sheet_name="data_train")
+    # df_result_test = pd.DataFrame({"T": Xtest["T"],
+    #                                "site": Xtest["site"],
+    #                                "ratio": Xtest["ratio"],
+    #                                "Ytest": Ytest.values.reshape(-1),
+    #                                'Ytest_pre': reg_opt.predict(Xtest).ravel()})
+    # df_result_test.to_excel(result, index=False, sheet_name="data_test")
     
-    result.close()
-    save_model = joblib.dump(reg_opt, path + filename + "_" + target + "_lbfgs_mlp.pkl")
+    # result.close()
+    # save_model = joblib.dump(reg_opt, path + filename + "_" + target + "_lbfgs_mlp.pkl")
