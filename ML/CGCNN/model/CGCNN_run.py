@@ -17,10 +17,10 @@ class FineTune(object):
         self.epochs = epoch
         self.data = cif_list
         self.n_conv = n_conv
+        self.save_dir = save_dir
         self.root_dir = root_dir
         self.momentum = momentum
         collate_fn = collate_pool
-        self.save_dir = save_dir
         self.batch_size = batch_size
         self.pin_memory = pin_memory
         self.random_seed = random_seed
@@ -30,7 +30,7 @@ class FineTune(object):
         self.criterion = nn.MSELoss()
         self.dataset = CIFData(root_dir=self.root_dir,data_file=self.data,unit=self.unit,tar=self.tar,max_num_nbr=12,radius=8,dmin=0,step=0.2,random_seed=1129)
         self.device = self._get_device()
-        self.model_checkpoints_folder = self.save_dir + "checkpoints/"
+        self.model_checkpoints_folder = save_dir + "checkpoints/"
         self.train_loader, self.valid_loader, self.test_loader = get_train_val_test_loader(dataset = self.dataset,
                                                                                             random_seed = self.random_seed,
                                                                                             collate_fn = collate_fn,
@@ -55,7 +55,7 @@ class FineTune(object):
         structures, _, _ = self.dataset[0]
         orig_atom_fea_len = structures[0].shape[-1]
         nbr_fea_len = structures[1].shape[-1]
-        model = CrystalGraphConvNet(orig_atom_fea_len, nbr_fea_len,n_conv = self.n_conv,n_out=3)
+        model = CrystalGraphConvNet(orig_atom_fea_len, nbr_fea_len,n_conv = self.n_conv,n_out=15)
         if self.device == 'cuda':
             torch.cuda.set_device(0)
             model.to(self.device)
@@ -102,8 +102,8 @@ class FineTune(object):
                 else:
                     target_var = target_normed
                 output = model(*input_var)
-                mae_error=mae(self.normalizer.denorm(output.data.cpu()), target)
                 loss = self.criterion(output, target_var)
+                mae_error=mae(self.normalizer.denorm(output.data.cpu()), target)
                 if bn % self.log_every_n_steps == 0:
                     print('Epoch: %d, Batch: %d, Loss '%(epoch_counter+1, bn), loss.item())
                 errot_all.append(mae_error)
@@ -112,7 +112,7 @@ class FineTune(object):
                 optimizer.step()
                 n_iter += 1
             if epoch_counter % self.eval_every_n_epochs == 0:
-                _, valid_mae = self._validate(model, self.valid_loader, epoch_counter)
+                _,valid_mae = self._validate(model, self.valid_loader, epoch_counter)
                 if valid_mae < best_valid_mae:
                     best_valid_mae = valid_mae
                     torch.save(model.state_dict(), os.path.join(self.model_checkpoints_folder, 'model.pth'))
@@ -149,7 +149,7 @@ class FineTune(object):
                 mae_error = mae(self.normalizer.denorm(output.data.cpu()), target)
                 losses.update(loss.data.cpu().item(), target.size(0))
                 mae_errors.update(mae_error, target.size(0))
-                print('Epoch [{0}] Validate: [{1}/{2}],''Loss (MAE) {loss.val:.3f} ({mae_errors.avg:.3f})'.format(
+                print('Epoch [{0}] Validate: [{1}/{2}],''MAE {mae_errors.val:.3f} ({mae_errors.avg:.3f})'.format(
                 n_epoch+1, bn+1, len(self.valid_loader), loss=losses, mae_errors=mae_errors))
                 error_all.append(mae_error)
         model.train()
@@ -165,7 +165,7 @@ class FineTune(object):
         self.model.load_state_dict(state_dict)
         losses = AverageMeter()
         mae_errors = AverageMeter()
-        error_all =[]
+        error_all = []
         with torch.no_grad():
             self.model.eval()
             for bn, (input, target, _) in enumerate(self.test_loader):
@@ -189,8 +189,10 @@ class FineTune(object):
                 mae_error = mae(self.normalizer.denorm(output.data.cpu()), target)
                 losses.update(loss.data.cpu().item(), target.size(0))
                 mae_errors.update(mae_error, target.size(0))
-                print('Test: [{0}/{1}], ''Loss (MAE) {loss.val:.3f} ({mae_errors.avg:.3f})'.format(bn, len(self.valid_loader),
-                        loss=losses, mae_errors=mae_errors))
+                print('Test: [{0}/{1}], '
+                'MAE {mae_errors.val:.3f} ({mae_errors.avg:.3f})'.format(
+                bn, len(self.valid_loader), loss=losses,
+                mae_errors=mae_errors))
                 error_all.append(mae_error)
         self.model.train()
         error_all_tensors = torch.stack(error_all)

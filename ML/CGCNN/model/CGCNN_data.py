@@ -100,7 +100,7 @@ class  CIFData(Dataset):
         cif_id, _ = self.id_prop_data[idx]
         cif_id = cif_id.replace('ï»¿', '')
         if self.tar:
-            target = torch.Tensor(np.load(self.root_dir + 'npy_' + self.unit + "/" + cif_id+'.npy').reshape(3,)).float()
+            target = torch.Tensor(np.load(self.root_dir + 'npy_' + self.unit + "/" + cif_id+'.npy').reshape(15,)).float()
             if os.path.exists(self.root_dir + "pkl/" + cif_id+'.pkl'):
                 with open(self.root_dir + "pkl/" + cif_id+'.pkl', 'rb') as f:
                     pkl_data = pickle.load(f)
@@ -127,7 +127,7 @@ class  CIFData(Dataset):
                     atom_fea = torch.Tensor(atom_fea)
                     nbr_fea = torch.Tensor(nbr_fea)
                     nbr_fea_idx = torch.LongTensor(nbr_fea_idx)
-                    with open(self.root_dir + 'pkl/' + cif_id+'.pkl', 'wb') as f:
+                    with open(self.root_dir + "pkl/" + cif_id+'.pkl', 'wb') as f:
                         pickle.dump((atom_fea, nbr_fea, nbr_fea_idx), f)
                 except:
                     print(cif_id)
